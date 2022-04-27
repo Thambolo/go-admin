@@ -140,7 +140,7 @@ type PopUpData struct {
 }
 
 type GetForm func(panel *types.FormPanel) *types.FormPanel
-type GetCtxForm func(ctx *context.Context, panel *types.FormPanel, args ...interface{}) *types.FormPanel
+type GetCtxForm func(ctx *context.Context, panel *types.FormPanel) *types.FormPanel
 
 var operationHandlerSetter context.NodeProcessor
 
@@ -185,7 +185,7 @@ func PopUpWithForm(data PopUpData, fn GetForm, url string) *PopUpAction {
 				SetPrefix(config.PrefixFixSlash()).
 				SetUrl(url).
 				SetOperationFooter(col1 + col2).GetContent()).
-			SetStyle(template.HTMLAttr(`overflow-x: hidden;overflow-y: hidden;`)).
+				SetStyle(template.HTMLAttr(`overflow-x: hidden;overflow-y: hidden;`)).
 			GetContent()
 	}
 	return &PopUpAction{
