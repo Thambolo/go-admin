@@ -76,6 +76,16 @@ func (t UserModel) IsEmpty() bool {
 	return t.Id == int64(0)
 }
 
+// IsDeleted check the user model is a deleted user or not
+func (t UserModel) IsDeleted() bool {
+	result, _ := t.Table(t.TableName).Select("id").WhereRaw("deleted_at IS NULL").Find(t.Id)
+	if result["id"] != nil {
+		return false
+	} else {
+		return true
+	}
+}
+
 // HasMenu check the user has visitable menu or not.
 func (t UserModel) HasMenu() bool {
 	return len(t.MenuIds) != 0 || t.IsSuperAdmin()

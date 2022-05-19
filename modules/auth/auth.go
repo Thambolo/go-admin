@@ -31,7 +31,7 @@ func Check(password string, username string, conn db.Connection) (user models.Us
 	if user.IsEmpty() {
 		ok = false
 	} else {
-		if comparePassword(password, user.Password) {
+		if comparePassword(password, user.Password) && !user.IsDeleted() {
 			ok = true
 			user = user.WithRoles().WithPermissions().WithMenus()
 			user.UpdatePwd(EncodePassword([]byte(password)))
