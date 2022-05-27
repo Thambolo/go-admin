@@ -170,7 +170,7 @@ func (h *Handler) EditForm(ctx *context.Context) {
 	}
 
 	err := param.Panel.UpdateData(param.Value())
-	if err != nil {
+	if err != nil && err.Error() != "no affect row" {
 		logger.Error("update data error: ", err)
 		if ctx.WantJSON() {
 			response.Error(ctx, err.Error(), map[string]interface{}{
