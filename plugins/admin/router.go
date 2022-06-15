@@ -18,6 +18,7 @@ func (admin *Admin) initRouter() *Admin {
 	// auth
 	route.GET(config.GetLoginUrl(), admin.handler.ShowLogin)
 	route.POST("/signin", admin.handler.Auth)
+	route.POST("/jwt", auth.Middleware(admin.Conn), admin.handler.JWTAuth)
 
 	// auto install
 	route.GET("/install", admin.handler.ShowInstall)

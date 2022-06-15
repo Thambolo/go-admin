@@ -19,6 +19,29 @@ import (
 	"github.com/GoAdminGroup/go-admin/template/types"
 )
 
+func (h *Handler) JWTAuth(ctx *context.Context) {
+
+	// Retrieve the current logged in user model
+	user := ctx.User().(models.UserModel)
+
+	// Set JWT cookie for client
+	jwtcookie := &http.Cookie{
+		Name:     "jwt",
+		Value:    auth.JWTAuthService().GenerateToken(user.UserName),
+		HttpOnly: true,
+		MaxAge:   config.GetSessionLifeTime(),
+		Path:     "/",
+	}
+	if config.GetDomain() != "" {
+		jwtcookie.Domain = config.GetDomain()
+	}
+	ctx.SetCookie(jwtcookie)
+
+	response.OkWithData(ctx, map[string]interface{}{
+		"url": h.config.GetIndexURL(),
+	})
+}
+
 // Auth check the input password and username for authentication.
 func (h *Handler) Auth(ctx *context.Context) {
 
@@ -58,6 +81,7 @@ func (h *Handler) Auth(ctx *context.Context) {
 		return
 	}
 
+	// Set go_admin_session cookie
 	err := auth.SetCookie(ctx, user, h.conn)
 
 	if err != nil {
@@ -77,7 +101,6 @@ func (h *Handler) Auth(ctx *context.Context) {
 			}
 		}
 	}
-
 	response.OkWithData(ctx, map[string]interface{}{
 		"url": h.config.GetIndexURL(),
 	})
@@ -85,12 +108,26 @@ func (h *Handler) Auth(ctx *context.Context) {
 
 // Logout delete the cookie.
 func (h *Handler) Logout(ctx *context.Context) {
+
+	// Deletes(expire) JWT cookie
+	jwtcookie := &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+	ctx.SetCookie(jwtcookie)
+
+	// Deletes go_admin_session cookie
 	err := auth.DelCookie(ctx, db.GetConnection(h.services))
 	if err != nil {
 		logger.Error("logout error", err)
 	}
+
 	ctx.AddHeader("Location", h.config.Url(config.GetLoginUrl()))
 	ctx.SetStatusCode(302)
+
 }
 
 // ShowLogin show the login page.

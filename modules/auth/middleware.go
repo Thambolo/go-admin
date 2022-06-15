@@ -127,10 +127,28 @@ func (invoker *Invoker) Middleware() context.Handler {
 	return func(ctx *context.Context) {
 		user, authOk, permissionOk := Filter(ctx, invoker.conn)
 
-		if authOk && permissionOk {
-			ctx.SetUserValue("user", user)
-			ctx.Next()
-			return
+		// Retreives request endpoint path
+		reqUrl := ctx.Request.URL.Path
+		if reqUrl == "/"+config.GetUrlPrefix()+"/jwt" {
+			if authOk && permissionOk {
+				ctx.SetUserValue("user", user)
+				ctx.Next()
+				return
+			}
+		} else {
+			if authOk && permissionOk {
+				// Check jwt
+				jwtOk := JWTValidation(ctx)
+				ctx.SetUserValue("user", user)
+				if jwtOk {
+					ctx.Next()
+					return
+				} else {
+					invoker.permissionDenyCallback(ctx)
+					ctx.Abort()
+					return
+				}
+			}
 		}
 
 		if !authOk {
@@ -175,6 +193,25 @@ func Filter(ctx *context.Context, conn db.Connection) (models.UserModel, bool, b
 	}
 
 	return user, true, CheckPermissions(user, ctx.Request.URL.String(), ctx.Method(), ctx.PostForm())
+}
+
+// JWT validation
+func JWTValidation(ctx *context.Context) (isValid bool) {
+	token := ctx.Cookie("jwt")
+
+	// Validate the token
+	t, err := JWTAuthService().ValidateToken(token)
+
+	// Valid Token Response
+	if t.Valid {
+		return true
+
+	} else if (err != nil) || (!t.Valid) {
+		// Invalid Token Response
+		return false
+	}
+
+	return true
 }
 
 const defaultUserIDSesKey = "user_id"
